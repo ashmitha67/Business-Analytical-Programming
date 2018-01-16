@@ -1,0 +1,2582 @@
+/*"magic string"*/
+
+*);*/;/*'*/ /*"*/; %MEND;run;quit;;;;;
+
+
+libname _in_  BASE "C:\SAS_WORK\sas2\zbiory_in";
+
+libname _out_ BASE "C:\SAS_WORK\sas2\zbiory_out";
+
+/* zbiory - sets in Polish */
+
+libname _in_  BASE "C:\SAS_WORK\sas2\sets_in";
+libname _out_ BASE "C:\SAS_WORK\sas2\sets_out";
+
+%put "C:\SAS_WORK\sas2\sets_out_%sysfunc(datetime(),B8601DT15.)";
+
+libname _out2_ BASE "C:\SAS_WORK\sas2\sets_out_%sysfunc(datetime(),B8601DT15.)";
+
+
+options DLCREATEDIR;
+libname _out2_ BASE "C:\SAS_WORK\sas2\sets_out_%sysfunc(datetime(),B8601DT15.)";
+
+
+
+
+libname _out3_ BASE "C:\SAS_WORK\sas2_I_am_not_here\sets_out_%sysfunc(datetime(),B8601DT15.)";
+
+
+libname _out3_ BASE "C:\SAS_WORK\sas2_I_am_not_here";
+libname _out3_ BASE "C:\SAS_WORK\sas2_I_am_not_here\sets_out_%sysfunc(datetime(),B8601DT15.)";
+
+
+%put **%sysfunc(GETOPTION(work))**;
+
+data work.test;
+x=17;
+run;
+
+libname _out4_ BASE "%sysfunc(GETOPTION(work))\subfolder_for_test";
+
+
+
+data telegram1;
+infile cards dlm = ".";
+input sentence $ :200. @@;
+if lengthN(sentence);
+datalines;
+Dear Family! Stop. We managed get to the sea. Stop.
+Weather is good. StoP. Auntie is getting better.
+Stop.
+Regards, Bazyli. Stop.
+;
+run;
+
+
+data telegram2;
+infile CARDS DLMSTR = "Stop.";
+input sentence $ :200. @@;
+if lengthn(sentence);
+datalines;
+Dear Family! Stop. We managed get to the sea. Stop.
+Weather is good. StoP. Auntie is getting better.
+Stop.
+Regards, Bazyli. Stop.
+;
+run;
+
+
+
+data telegram3;
+infile cards dlmstr = "stop." DLMSOPT='i'; 
+input zdanie $ :200. @@;
+if lengthn(zdanie);
+datalines;
+Dear Family! Stop. We managed get to the sea. Stop.
+Weather is good. StoP. Auntie is getting better.
+Stop.
+Regards, Bazyli. Stop.
+;
+run;
+
+
+
+
+
+data table;
+format id AGE HEIGHT WEIGHT best32.;
+
+infile CARDS4 dlmstr = "</TD><td>" dlmsopt='i' missover; 
+input id_char $ :200. AGE HEIGHT WEIGHT_char $ :200. ;
+
+id   = input(COMPRESS(id_char  , ,'DK'),best32.);
+WEIGHT = input(compress(WEIGHT_char, ,'dk'),best32.);
+drop id_char WEIGHT_char;
+if id;
+
+DATALINES4;
+<table>
+<tr><th>ID</th><th>AGE</th><th>HEIGHT</th><th>WEIGHT</th></tr>
+<tr><td>131</td><td>23</td><td>173</td><td>80</td></tr>
+<tr><td>448</td><td>31</td><td>181</td><td>83</td></tr>
+<tr><td>765</td><td>47</td><td>190</td><td>102</td></tr>
+<tr><td>1082</td><td>19</td><td>186</td><td>75</td></tr>
+<tr><td>1399</td><td>28</td><td>174</td><td>75</td></tr>
+<tr><td>16116</td><td>51</td><td>169</td><td>60</td></tr>
+<tr><td>19133</td><td>33</td><td>182</td><td>78</td></tr>
+</table>
+;;;;
+run;
+
+%put **%sysfunc(PATHNAME(_out4_))**;
+
+filename _out4_ "%sysfunc(PATHNAME(_out4_))\example.txt";
+
+data _null_;
+set table;
+file _out4_ dlmstr = "<separator>";
+put id AGE HEIGHT WEIGHT;
+run;
+
+%put **%sysfunc(FILEEXIST(%sysfunc(PATHNAME(_out4_))\example.txt))**;
+
+
+
+
+filename _out4_ "%sysfunc(PATHNAME(_out4_))\example2.txt";
+
+data _null_;
+set table;
+length separator $ 20;
+separator = cats("<separator",put(_N_,best.),">"); /* best12.*/
+file _out4_ dlmstr = separator;
+put id AGE HEIGHT WEIGHT;
+run;
+
+%put **%sysfunc(FILEEXIST(%sysfunc(PATHNAME(_out4_))\example2.txt))**;
+
+
+
+filename _out4_ "%sysfunc(PATHNAME(_out4_))\example3.txt";
+
+data _null_;
+set table;
+length separator $ 20;
+separator = cats("<separator",put(_N_,best.),">");
+file _out4_ dlmstr = separator DLMSOPT='T'; /* <- kasujemy zbedne spacje */
+put id AGE HEIGHT WEIGHT;
+run;
+
+%put **%sysfunc(FILEEXIST(%sysfunc(PATHNAME(_out4_))\example3.txt))**;
+
+
+
+
+
+
+
+%macro make_data_set(n,prefix=work.test_ds_);
+
+%do i = 1 %to &n.;
+ data &prefix&i.;
+  do i = 1 to &n.;
+   x = ranuni(&i.);
+   y = ranuni(&i.);
+   z = ranuni(&i.);
+   output;
+  end;
+ run;
+%end;
+
+%mend make_data_set;
+%make_data_set(5);
+
+
+data combine1;
+set work.test_ds_1 work.test_ds_2 work.test_ds_3 work.test_ds_4 work.test_ds_5;
+run;
+
+
+data combine2;
+set
+%macro ccc(n);
+%do i = 1 %to &n.;
+ work.test_ds_&i.
+%end;
+%mend ccc;
+%ccc(5)
+;
+run;
+
+
+data combine3;
+set work.test_ds_1 - work.test_ds_5;
+run;
+
+
+/* set no. 4 was removed */
+data combine4;
+set work.test_ds_1 - work.test_ds_5;
+run;
+
+
+
+
+data combine5;
+set work.test_ds_:;
+run;
+
+
+
+
+
+%macro make_data_set_date(n,prefix=work.test_date_ds_r,date="20oct2017"d);
+
+%do i = 0 %to &n.;
+ data &prefix%sysfunc(INTNX(MONTH, &date., &i., BEGIN),yymm7.);
+  do i = 1 to &n.;
+   x = ranuni(&i.);
+   y = ranuni(&i.);
+   z = ranuni(&i.);
+   output;
+  end;
+ run;
+%end;
+
+%mend make_data_set_date;
+%make_data_set_date(5);
+
+
+
+
+
+data combine6;
+set work.test_date_ds_:;
+run;
+
+
+
+
+data combine6i;
+length in_data_set $ 41;
+set work.test_date_ds_: INDSNAME = indsname;
+in_data_set = indsname;
+run;
+
+
+
+
+data combine7;
+length in_data_set 8;
+set work.test_date_ds_: INDSNAME = indsname;
+in_data_set = COMPRESS(indsname, , "TPSA");
+
+r = floor(in_data_set/100);
+m = mod(in_data_set,100);
+run;
+
+
+
+
+/* create macrovariables in SQL */
+proc sql noprint;
+ select distinct x format best32.
+ into :x1-:x&sysmaxlong                /* <- 2'147'483'647 */
+ from combine6
+ ;
+ %let num_values = &sqlobs;
+quit;
+
+%put **&num_values.**;
+%put _user_;
+
+
+
+
+
+proc sql noprint;
+ select distinct i
+ into :x1-
+ from combine6
+ ;
+ %let num_values = &sqlobs;
+quit;
+
+%put **&num_values.**;
+%put _user_;
+
+
+
+
+
+
+proc sql noprint;
+ select distinct count(i) as ile_i
+ into :x
+ from combine6
+ ;
+quit;
+
+%put **&x**;
+
+%put **%trim(&x)**;
+
+
+
+proc sql noprint;
+ select distinct count(i) as ile_i
+ into :y TRIMMED /* <- remove spaces before and after */
+ from combine6
+ ;
+quit;
+
+%put **&y**;
+
+
+/* arrays */
+data arrays1;
+set combine6;
+
+Array XYZ[3] x y z;
+
+Array ABC[3];
+
+do i = 1 to dim(XYZ);
+ ABC[i]=XYZ[i];
+end;
+run;
+
+
+
+data arrays2;
+set combine6;
+
+Array XYZ x y z; /* implicit array  */
+
+Array ABC[3];
+
+do OVER XYZ; 
+ ABC[_i_]=XYZ;
+end;
+run;
+
+
+
+
+
+
+data arrays3;
+set combine6;
+
+t=.;
+Array XYZ x y z t; /* implicit array */
+
+Array ABC[4];
+
+do OVER XYZ; 
+ ABC[_i_]=XYZ;
+end;
+
+CALL SORTN (of ABC[*]); /* call sortN sorts numeric var.*/
+
+put / (XYZ[*]) (=);
+put (ABC[*]) (=/);
+
+put '**********';
+s = SMALLEST (1, of XYZ[*]); /* i-th smallest non missing value from array */
+l = LARGEST (1, of XYZ[*]);  /* i-th largest non missing value from array  */
+o = ORDINAL (1, of XYZ[*]);  /* i-th smallest according to SAS ordering */
+
+Array SLO s l o;
+put (SLO[*]) (=);
+/*
+put '**********';
+s = SMALLEST (dim(XYZ), of XYZ[*]); 
+l = LARGEST (dim(XYZ), of XYZ[*]);  
+o = ORDINAL (dim(XYZ), of XYZ[*]);  
+
+put (SLO[*]) (=);
+*/
+run;
+
+
+
+%let _st_ = %sysfunc(datetime());
+%make_data_set(1000,prefix=work.zzzzzz_); /* Ctrl + F2 */
+%let _en_ = %sysfunc(datetime());
+%put NOTE:[BJ] time: %sysevalf(&_en_. - &_st_.) s.;
+
+
+
+
+data z_combined;
+length in_data_set $ 41;
+set work.zzzzzz_: indsname = indsname;
+in_data_set = indsname;
+run;
+
+
+
+
+proc datasets lib = work NODETAILS;
+delete zzzzzz_:;
+run;
+quit;
+
+
+
+
+
+
+
+proc sort data = z_combined out = sorted3 EQUALS;
+by i;
+run;
+
+proc sort data = z_combined out = sorted4 NOEQUALS;
+by i;
+run;
+
+
+
+
+
+
+
+
+
+data alfabet_pl;
+infile cards dlm=" ";
+input symbol $ :2. @@;
+cards;
+Q W E R T Y U I O P A S D F G H J K L Z X C V B N M
+q w e r t y u i o p a s d f g h j k l z x c v b n m
+0 9 8 7 6 5 4 3 2 1
+00 99 88 77 66 55 44 33 22 11
+ą ż ź ę ć ń ó ł Ą Ż Ź Ę Ć Ń Ó Ł
+;
+run;
+
+
+
+proc sort data = alfabet_pl out = alfabet_pl_000;
+by symbol;
+run;
+
+
+%put *&sysencoding*;
+
+Proc SORT
+data=alfabet_pl
+out=alfabet_pl_sort1
+SORTSEQ=POLISH
+;
+    by symbol;
+run;
+
+
+Proc SORT
+data=alfabet_pl
+out=alfabet_pl_sort2
+SORTSEQ=LINGUISTIC
+(
+CASE_FIRST=UPPER
+LOCALE=pl_PL
+)
+;
+    by symbol;
+run;
+
+
+
+
+Proc SORT
+data=alfabet_pl
+out=alfabet_pl_sort3
+SORTSEQ=LINGUISTIC
+(
+CASE_FIRST=UPPER
+LOCALE=pl_PL
+NUMERIC_COLLATION=ON /* <- order digits as numbers */
+)
+;
+    by symbol;
+run;
+
+/* about encoding 
+
+-CONFIG "C:\SASHome\SASFoundation\9.4\nls\u8\sasv9.cfg"
+
+*/
+
+
+DATA long_variables;
+array TABLE[100] $216.;
+
+    do i = 1 to 100000;
+        x = ranuni(17);
+        a = "BLEBELBLEBLEBELBLEBLEBELBLEBLEBELBLEBLEBELBLEBLEBELBLE";
+        b = "BLABLABALBLABLABALBLABLABALBLABLABALBLABLABALBLABLABAL";
+        c = "BLUBLUBLUBLUBLUBLUBLUBLUBLUBLUBLUBLUBLUBLUBLUBLUBLUBLU";
+        d = "BLOBLOBLOBLOBLOBLOBLOBLOBLOBLOBLOBLOBLOBLOBLOBLOBLOBLO";
+        do j = 1 to dim(TABLE);
+            TABLE[j] = CATs(a,b,c,d); /* trim(left(a)) || ... || trim(left(d)) */
+                                      /* strip(a) || .... || strip(d) */
+        end;
+        output;
+    end;
+run;
+
+Proc SORT
+data=long_variables
+out=long_variables_TAGSORT
+TAGSORT
+;
+    by x;
+run;
+
+
+
+Proc SORT
+data=long_variables
+out=long_variables_NOTAGSORT
+;
+    by x;
+run;
+
+
+proc sql;
+drop table long_variables;
+drop table long_variables_TAGSORT;
+drop table long_variables_NOTAGSORT;
+quit;
+
+
+
+
+
+DATA long;
+    do i = 1 to 1e7;
+        x = ranuni(17);
+        y = mod(i,10);
+        output;
+    end;
+run;
+
+
+
+Proc SORT
+data=long
+out=long_THREADS
+THREADS
+;
+    by y x;
+run;
+/*THREADS | NOTHREADS
+turns on or turns off thread sorting
+it doesn't work with TAGSORT
+*/
+
+
+Proc SORT
+data=long
+out=long_NOTHREADS
+NOTHREADS
+;
+    by y x;
+run;
+
+
+proc sql;
+drop table long;
+drop table long_THREADS;
+drop table long_NOTHREADS;
+quit;
+
+
+
+
+
+/* KEY */
+
+data z;
+ input x y;
+cards;
+2 3
+23 25
+23 22
+2 4
+23 22
+1 2
+1 2
+;
+run;
+
+
+proc sort data = z out = b1;
+ by x y;
+run;
+
+proc sort data = z out = k1a;
+ key x y;
+run;
+
+proc sort data = z out = k1b;
+ key x; 
+ key y;
+run;
+
+
+proc sort data = z out = b2;
+ by descending x y;
+run;
+
+proc sort data = z out = k2;
+ key x / descending; 
+ key y;
+run;
+
+
+proc sort data = z out = b3;
+ by descending x descending y;
+run;
+
+proc sort data = z out = k3;
+ key x y / descending; 
+run;
+
+
+
+
+
+
+options VALIDVARNAME=ANY;
+
+data x;
+ 'Hello Word!'n = 17;
+run;
+
+
+data y;
+set x;
+z='Hello Word!'n + 13;
+run;
+
+options VALIDVARNAME=v7;
+
+data z;
+set x;
+run;
+
+/* ls ~/home | grep txt */
+
+
+
+
+/* PIPE */
+
+
+
+
+/* ZBIORY in Polish is eqiv. to SETS in Eng. */
+
+%put *%sysfunc(PATHNAME(ZBIORY))*;
+
+/*filename rurka1 "*C:\SAS_WORK\ZBIOR\some_text_ftil.txt"; */
+
+/* rurka = small/tiny pipe */
+
+filename rurka1 PIPE "DIR %sysfunc(PATHNAME(ZBIORY))";
+
+data zbiory1;
+infile rurka1 dlm = "0A"x; /* 0A 0D */
+input x :$char200.;
+run;
+
+
+
+filename rurka2 PIPE "DIR /S /B /L ""C:\SAS_WORK\""";
+
+data zbiory2;
+infile rurka2 dlm = "0A"x;
+input x :$char200.;
+run;
+
+
+
+
+
+
+data zbiory2;
+infile rurka2 dlm = "0A"x;
+input;
+
+if find(upcase(scan(_INFILE_,-1,".")),'SAS7BDAT');
+
+length fullpath $ 2000 dsname $ 41;
+
+dsname = scan(_infile_,-1,"\");
+fullpath = substrn(_infile_, 1, length(strip(_infile_)) - length(strip(dsname)));
+
+run;
+
+
+
+
+filename rurka3 pipe "SET";
+
+data zbiory3;
+infile rurka3 dlm = "0A"x;
+input x :$char2000.;
+run;
+
+
+
+
+filename rurka4 pipe 'tree "C:\SAS_WORK" /F /A' lrecl=5555;
+
+data zbiory4;
+infile rurka4 dlm = "0A"x;
+input x :$char5555.;
+run;
+
+
+
+
+
+filename rurka5 pipe "COPY ""%sysfunc(PATHNAME(ZBIORY))\*"" ""%sysfunc(PATHNAME(WORK))""" lrecl=5555;
+
+data zbiory5;
+infile rurka5 dlm = "0A"x;
+input x :$char5555.;
+run;
+
+
+
+
+DATA ZBIORY.LONG_LONG;
+array TABLE[100] $216.;
+
+    do i = 1 to 100000;
+        x = ranuni(17);
+        a = "BLEBELBLEBLEBELBLEBLEBELBLEBLEBELBLEBLEBELBLEBLEBELBLE";
+        b = "BLABLABALBLABLABALBLABLABALBLABLABALBLABLABALBLABLABAL";
+        c = "BLUBLUBLUBLUBLUBLUBLUBLUBLUBLUBLUBLUBLUBLUBLUBLUBLUBLU";
+        d = "BLOBLOBLOBLOBLOBLOBLOBLOBLOBLOBLOBLOBLOBLOBLOBLOBLOBLO";
+        do j = 1 to dim(TABLE);
+            TABLE[j] = cats(a,b,c,d);
+        end;
+        output;
+    end;
+run;
+
+
+
+
+
+
+filename rurka6 pipe 
+ "COPY ""%sysfunc(PATHNAME(ZBIORY))\LONG_LONG.*"" ""%sysfunc(PATHNAME(WORK))""" 
+lrecl=5555;
+
+data zbiory6;
+infile rurka6 dlm = "0A"x;
+input x :$char5555.;
+run;
+
+
+
+filename rurka7 pipe 
+ "ERASE ""%sysfunc(PATHNAME(ZBIORY))\LONG_LONG.*"" ""%sysfunc(PATHNAME(WORK))\LONG_LONG.*""" 
+lrecl=5555;
+
+data zbiory7;
+infile rurka7 dlm = "0A"x;
+input x :$char5555.;
+run;
+
+
+/* rurka = small/tiny pipe */
+
+
+
+data list_of_libs;
+infile cards;
+input libname $ :8.;
+cards;
+work
+zbiory
+;
+run;
+
+
+filename XYZ "C:\SAS_WORK\11111111111111111111111111111111111.txt";
+data _null_;
+file XYZ;
+set list_of_libs;
+
+if libname = "work" then
+do;
+put "WARNING: do not test WORK lib!!!";
+end;
+
+put _all_;
+
+run;
+
+
+
+filename XYZ "C:\SAS_WORK\2222222222222222222222222222222222.txt";
+data _null_;
+file XYZ;
+set list_of_libs;
+
+if libname = "work" then
+do;
+PUTLOG "WARNING: do not test WORK lib!!!";
+end;
+
+put _all_;
+
+run;
+
+
+data _null_;
+set list_of_libs;
+rc = FILENAME('f' || strip(put(_N_,best32.)),'DIR /B /L /S "' || strip(PATHNAME(libname)) || '"', "PIPE"); 
+PUTLOG "**" rc= "**";
+
+CALL EXECUTE(
+CATS(
+ 'data zbiory.from_'
+,libname
+,'; infile f'
+,put(_N_,best32.)
+,'%str( )dlm = "0A"x; input x :$char5555.; run;'
+) 
+);
+
+run;
+
+/*
+data zbiory.from_work; 
+infile f1%str( )dlm = "0A"x; input x :$char5555.; 
+run;
+*/
+
+
+
+
+
+filename rurka8 PIPE "wmic logicaldisk get name, description";
+data _null_;
+infile rurka8 dlm='0A'x;
+input disc $ :100.;
+if findc(disc,":");
+put _all_;
+run;
+filename rurka8;
+
+
+
+
+
+
+
+
+filename schowek1 CLIPBRD;
+
+data schowek1;
+infile schowek1 dsd dlm = "0A"x;
+input x :$char5555.;
+run;
+
+filename schowek1 clear;
+
+filename schowe_e CLIPBRD;
+data schowek1_e;
+infile schowe_e dsd dlm = "0A"x;
+input x :$char200.;
+a1 = input(scan(x,1),best.);
+a2 = input(scan(x,2),best.);
+a3 = input(scan(x,3),best.);
+run;
+
+
+
+
+
+
+filename schowek CLIPBRD;
+
+data _null_;
+file schowek;
+dsn = "sashelp.class";
+
+length name $32;
+do dsid = OPEN(dsn,'I') while(dsid ne 0);
+ nvars = ATTRN(dsid,'NVARS');
+ do i = 1 to nvars;
+  name = VARNAME(dsid,i);
+   if i NE nvars then put name +(-1) ", " @;
+                 else put name +(-1) @;
+ end;
+ dsid = close(dsid);
+end;
+run;
+
+filename schowek clear;
+
+
+/*Name, Sex, Age, Height, Weight*/
+
+
+
+
+
+%macro GetVarList(DSNAME,SEPARATOR=%str(,));
+
+filename schowek CLIPBRD;
+
+%IF &DSNAME. ne  AND %sysfunc(EXIST(&DSNAME.)) %THEN %DO;
+
+data _null_;
+file schowek;
+dsn = "&DSNAME.";
+
+length name $32;
+do dsid = open(dsn,'I') while(dsid ne 0);
+ nvars = attrn(dsid,'NVARS');
+ do i = 1 to nvars;
+  name = varname(dsid,i);
+   if i NE nvars then put name +(-1) "&SEPARATOR. " @;
+                 else put name +(-1) @;
+ end;
+ dsid = close(dsid);
+end;
+run;
+
+%END;
+
+filename schowek clear;
+
+%mend GetVarList;
+
+%GetVarList(sashelp.cars,SEPARATOR= );
+
+%GetVarList(sashelp.class);
+
+/*
+Name, Sex, Age, Height, Weight
+
+Make Model Type Origin DriveTrain MSRP Invoice EngineSize Cylinders Horsepower MPG_City MPG_Highway Weight Wheelbase Length
+*/
+
+
+
+
+
+/*
+gsubmit "
+filename s clipbrd;
+data _null_;
+file s;
+d = '%8b'||.||'%32b';
+length n $ 32;
+do di=open(d,'I') while(di ne 0);
+ do i=1 to attrn(di,'NVARS');
+  n=varname(di,i);
+  put n @;
+ end;
+end;
+run;
+filename s clear;
+";
+*/
+
+
+/*
+gsubmit "filename s clipbrd; data _null_; file s; d = '%8b'||.||'%32b'; length n $ 32; do di=open(d,'I') while(di ne 0); do i=1 to attrn(di,'NVARS'); n=varname(di,i); put n @; end; end; run; filename s clear;";
+*/
+
+
+
+/*
+1) activate Explorer window
+2) Tools -> Options -> Explorer... -> Members -> Table -> Edit
+*/
+
+
+
+
+/* two words about macros and stuff */
+
+
+dm log 'clear' log;     /* <- ignore it for a while :-) */
+%macro a1(xyz);
+%put NOTE:[&SYSMACRONAME.] **GO!**;
+ data &xyz (index=(x)); /* <- ignore it for a while :-) */
+  do x=1 to 100; 
+    y="A" || put(x,best. -L) ; output;
+  end;
+ run;
+%put NOTE:[&SYSMACRONAME.] **END**;
+%mend a1;
+
+%macro a2(ABC);
+%put NOTE:[&SYSMACRONAME.] **GO!**;
+ %a1(&ABC.)
+
+ proc sql;
+ create table &ABC.2 as
+  select x, sum(x) as i
+  from &ABC.
+  where x < 33
+  having x between avg(x) - std(x) and avg(x) + std(x)
+  order by x
+ ;
+ quit;
+
+ data &ABC.3;
+ merge &ABC. &ABC.2;
+ by x;
+ run;
+
+%put NOTE:[&SYSMACRONAME.] **END**;
+%mend a2;
+
+%put NOTE:[&SYSMACRONAME.] **GO!**;
+%a2(ghi)
+%put NOTE:[&SYSMACRONAME.] **END**;
+
+
+
+options STIMER;
+
+
+options STIMER MPRINT;
+
+
+options STIMER MPRINT SYMBOLGEN;
+
+
+
+options STIMER MPRINT SYMBOLGEN MLOGIC;
+
+
+options STIMER MPRINT SYMBOLGEN MLOGIC MLOGICNEST;
+
+
+
+
+
+options STIMER MPRINT SYMBOLGEN MLOGIC MLOGICNEST MCOMPILENOTE=ALL; /* NONE, NOAUTOCALL, ALL */
+
+
+
+
+
+options STIMER MPRINT SYMBOLGEN MLOGIC MLOGICNEST MCOMPILENOTE=ALL MSGLEVEL=I; /* I, N*/
+
+
+
+
+
+
+options STIMER MPRINT SYMBOLGEN MLOGIC MLOGICNEST MCOMPILENOTE=ALL MSGLEVEL=I FULLSTIMER; 
+
+
+
+
+
+
+options LRECL = max; /* logical record length = 32767 */
+filename MPRINT "C:\SAS_WORK\sas2\executed_macro_text.txt" ;
+options STIMER MPRINT MLOGIC SYMBOLGEN MLOGICNEST MCOMPILENOTE=ALL MSGLEVEL=I FULLSTIMER MFILE;
+
+
+
+
+
+%macro debugging(_out_code_set_=);
+%if &_out_code_set_. ne 
+%then
+%do;
+filename MPRINT "&_out_code_set_." lrecl = max;
+options
+MPRINT 
+MFILE
+MLOGIC 
+SYMBOLGEN 
+MLOGICNEST 
+MCOMPILENOTE=NOAUTOCALL /* ALL */
+STIMER
+FULLSTIMER 
+MSGLEVEL=I;
+DETAILS 
+run;
+%end;
+%else %do;
+filename MPRINT CLIPBRD;
+filename MPRINT;
+options 
+NOMPRINT 
+NOMFILE 
+NOMLOGIC 
+NOSYMBOLGEN 
+NOMLOGICNEST 
+MCOMPILENOTE=NONE
+/*NO*/ STIMER 
+NOFULLSTIMER 
+MSGLEVEL=N; 
+run;
+%end;
+
+%mend debugging;
+
+%debugging();
+
+%debugging(C:\SAS_WORK\sas2\executed_macro_text.txt);
+
+
+
+options DETAILS;
+
+
+/* some MACRO stuff */
+
+%macro create(setname);
+ 
+ %put NOTE: Building set: &setname in macro: &SYSMACRONAME.;
+ data &setname;
+  x="We are in set &setname";
+ run;
+
+%mend create;
+
+data abc; 
+ input setname $;
+ cards;
+a1
+b2
+c3
+;
+run;
+
+
+%create(x13);
+%create(y17);
+
+
+data _null_;
+ set abc;
+ CALL SYMPUT('setname',setname);
+ CALL EXECUTE('%create(&setname)');
+run;
+
+
+
+data _null_;
+ set abc;
+ call symput('setname',setname);
+ rc = DOSUBL('%create(&setname)'); /* new in SAS 9.4 */
+ putlog "#############" rc= "#############";
+run;
+
+
+
+
+
+
+
+
+
+
+%macro create2(setname);
+ 
+ data &setname;
+  x="We are in &setname";
+  y = Rannor(input("6"||compress("&setname.",,"TPSA"),best32.));
+  call SYMPUTX("live_from_&setname.",y,"L");
+ run;
+
+ %put NOTE:[BJ] Live from macro &SYSMACRONAME.;
+ %put NOTE-[BJ] We created(?) set *&setname.*;
+ %put NOTE-[BJ] Value of new macrovariable live_from_&setname. is *&&live_from_&setname..*;
+
+%mend create2;
+
+
+
+
+data _null_;
+ set abc;
+ call symput('create2',setname);
+ CALL EXECUTE('%create2(&setname)');
+run;
+
+
+
+data _null_;
+ set abc;
+ call symput('setname',setname);
+ rc = DOSUBL('%create2(&setname)');
+ putlog "#############" rc= "#############";
+run;
+
+
+
+
+
+data abc1 abc2;
+ input name $ :32000.;
+ cards;
+a13t17
+bb8
+c3r7
+best32
+k2
+r2d2
+c3po
+atat
+;
+run;
+
+
+
+
+
+data _null_;
+set abc1 end=EOF;
+retain lmax 0;
+l = LENGTH(name); /* LENGTHN ? */
+lmax = lmax<>l;
+if eof then 
+CALL EXECUTE(
+"data abc1(rename = (name_X=name)); 
+ length name_X $ " !! put(lmax,best32.) !! "; 
+ set abc1; 
+ name_X = name; 
+ drop name; 
+ run;"
+);
+run;
+
+
+
+data _null_;
+set abc2 end=EOF;
+retain lmax 0;
+l = lengthn(name);
+lmax = lmax<>l;
+if eof then 
+rc = DOSUBL(
+"data abc2(rename = (name_X=name)); 
+ length name_X $ " !! put(lmax,best32.) !! "; 
+ set abc2; 
+ name_X = name; 
+ drop name; 
+ run;"
+);
+run;
+
+
+/* Lcture notes */
+/* quick summary of execution order */
+/*
+    data _null_;
+        call symputx('ABC', 12);
+    run;
+    data SETSET;
+     do i = 1 to &abc;
+        j = ranuni(&abc);
+        output;
+     end;
+    run;
+    proc sort data = SETSET;
+        by j;
+    run;
+*/
+
+options nomlogic nomprint nosymbolgen;
+
+%macro lookoutfororder();
+
+%put NOTE-*1]* Data step _NULL_;
+
+    data _null_;
+put "NOTE-*2)* Call SymputX generates makrovariable ABC";
+        call symputx('ABC', 12);
+    run;
+
+%put NOTE-*3]* Data stepu code which generate SETSET is ready for compilation;
+
+    data SETSET;
+%put NOTE-*4]* Data stepu code which generate SETSET is compilated;
+%put NOTE-*5]* We are using makrovariable ABC with value &ABC;
+put "NOTE-*6)* We are looping in data step and executing code";
+     do i = 1 to &abc;
+        j = ranuni(&abc);
+        output;
+     end;
+    run;
+    proc sort data = SETSET;
+        by j;
+    run;
+
+%mend lookoutfororder;
+
+%symdel ABC / nowarn;
+%put ########################################################;
+
+
+/* standard macro call: */
+%lookoutfororder()
+
+
+
+
+
+
+%symdel ABC / nowarn;
+%put ########################################################;
+
+/* call by call execute: */
+data _null_;
+ CALL EXECUTE('%lookoutfororder()');
+run;
+
+
+
+
+
+
+%symdel ABC / nowarn;
+%put ########################################################;
+
+/* call by dosubl: */
+data _null_;
+ rc = DOSUBL('%lookoutfororder()');
+run;
+
+/***************************************************************************/
+
+/* in folder C:\SAS_WORK\MAKRAwe have: */
+/* file mkr_a.sas: */
+/*
+%MACRO mkr_a(number);
+
+data set_mkrA;
+ do i=1 to &number;
+  x=ranuni(&number);
+  output;
+ end;
+run;
+
+%MEND mkr_a;
+*/
+/* file mkr_d.sas: */
+/*
+%MACRO mkr_d(number,name);
+
+data &name;
+ do i = 1 to &number;
+  x = ranuni(321);
+  y = (7 * x) + i;
+  output;
+ end;
+run;
+
+%MEND mkr_d;
+*/
+
+
+filename nazwa 'C:\SAS_WORK\MAKRA\mkr_a.sas';
+%include nazwa;
+%mkr_a(113);
+
+options mprint;
+%mkr_a(113);
+
+
+
+%include 'C:\SAS_WORK\MAKRA\mkr_a.sas';
+%mkr_a(113);
+
+
+
+
+%include 'C:\SAS_WORK\MAKRA\mkr_a.sas' / source2;
+%mkr_a(113);
+
+
+
+
+/* always together like Bonie and Clyde*/
+options MAUTOSOURCE;
+options SASAUTOS = (sasautos 'C:\SAS_WORK\MAKRA');
+
+
+
+%mkr_d(13,test);
+
+
+
+
+
+
+LIBNAME makra BASE "C:\SAS_WORK\MAKRA";
+
+/* always together like Pinkee & Brain */
+options 
+MSTORED          
+SASMSTORE = makra
+;
+
+
+
+
+
+%macro open_source() / store; /* "Open source" */
+  data open_source;
+    x = 1;
+    y = 2;
+    z = x + y;
+    put "This is open source - open code = safe(ier) code :-)";
+    put _all_;
+  run;
+%mend open_source;
+
+
+
+
+
+%macro no_open_source() / store SECURE; /* "No open source" */
+  data no_open_source;
+    x = 3;
+    y = 4;
+    z = x + y;
+    put "No Open source open source - hiden code = bad code :-("; 
+    put _all_;
+  run;
+%mend no_open_source;
+
+
+
+options mlogic mprint symbolgen;
+%open_source()
+%no_open_source()
+
+
+
+
+
+filename os catalog 'makra.sasmacr.open_source.macro';
+data _null_;
+  infile os;
+  input;
+  put _INFILE_;
+run;
+
+
+filename nos catalog 'makra.sasmacr.no_open_source.macro';
+data _null_;
+  infile nos;
+  input;
+  put _INFILE_;
+run;
+
+
+options nomlogic nomprint nosymbolgen;
+
+
+
+
+
+
+/* MINOPERATOR i MINDELIMITER  */
+
+
+
+/*
+if x in (1,2,3,4,5,6) then 'ok' else 'bad';
+*/
+
+
+%macro IN_macro_test(pattern,length,var) / /* <- options are on:*/
+MINOPERATOR                      /* IN operato is enabled */
+MINDELIMITER=','                 /* select separator, followin list of caracters in forbiden: %  &  '  "  (  )  ; */
+; 
+
+ %if %upcase(&pattern) IN (TEKST,T,TEXT) %then /* <- %UPCASE makes capital letters */
+  %do;
+
+   data a;
+    length variable $ %sysfunc(min(%sysfunc(max(&length,1)),32767));
+    variable="&var";
+   run;
+
+  %end;
+ %else 
+  %if %upcase(&pattern) in (LICZBA,L,N,NUMBER) %then
+   %do;
+
+    data a;
+     length variable %sysfunc(min(%sysfunc(max(&length,3)),8));
+     variable=&var;
+    run;
+
+   %end;
+  %else %do; %put NOTE:[BJ] ***********************; 
+             %put NOTE-[BJ] *pattern unrecognised *; 
+             %put NOTE-[BJ] ***********************;
+        %end;
+%mend IN_macro_test;
+
+%IN_macro_test(TekST,1,A)
+%IN_macro_test(nuMBer,3,5)
+%IN_macro_test(BlabLABla,3,5)
+%IN_macro_test(T,54321,54321)
+
+
+
+
+
+
+/* option: PARMBUFF and makrovariable: &SYSPBUFF. */
+
+%macro test_PARMBUFF(test1, test2, test3=a3, test4=b4) / PARMBUFF;
+
+    %put $$&SYSPBUFF.$$;
+    %put ##&test1.##;
+    %put ##&test2.##;
+    %put ##&test3.##;
+    %put ##&test4.##;
+
+%mend test_PARMBUFF;
+
+
+
+%test_PARMBUFF(d1,d2,d3,d4,d5,d6,f7,test3=d0);
+
+
+
+
+
+
+%macro is_Mary_on_the_list(a=) /
+PARMBUFF MINOPERATOR MINDELIMITER=',' SECURE
+; 
+%if MARY in %upcase(&SYSPBUFF.) %then
+ %do;
+  %put WARNING:[!] Attention! Mary is on the list, run!;
+ %end;
+%else
+ %do;
+  %put NOTE:[+] She is not on the list, we are safe!;
+ %end;
+
+%mend is_Mary_on_the_list;
+
+
+
+%is_Mary_on_the_list(John, Annna, Tim);
+
+%is_Mary_on_the_list(John, Annna, Tim, Mike, Bart, Mery, Mary, Tom);
+
+
+%let SYSJOHN=JONNY; /* try to avoid such naming, my good advise :-) */
+
+
+options nomlogic nomprint nosymbolgen;
+
+
+
+
+%put NOTE-[-] I am &sysuserid;
+
+%put NOTE-[-] My SAS is: &sysvlong4;
+
+
+
+
+data _null_;
+set &There_is_no_such_data_set.;
+run;
+
+
+
+
+%put NOTE-[-] Last ERROR code: &syserr;
+%put NOTE-[-] Last ERROR texto: %SUPERQ(syserrortext);
+
+%put NOTE-[-] Last WARNINGa text: %SUPERQ(syswarningtext);
+
+
+
+
+
+
+%macro runn();
+run;
+%if &SYSERR. %then %do; %abort cancel; %end; data _null_; run; %put **&SYSERR.**;
+%mend runn;
+
+
+
+
+data x;
+x=1;
+outtttputx;
+x=2;
+output;
+run;
+
+proc sql;
+create table a as 
+select *
+from x
+;
+create table b as
+select *
+from x
+;
+create table c as
+select *
+from x
+;
+create table d as
+select *
+from x
+;
+create table e as
+select *
+from x
+;
+quit;
+run;
+
+
+
+
+
+
+
+
+
+data x;
+x=1;
+outtttputx;
+x=2;
+output;
+%runn;
+
+proc sql;
+create table a as 
+select *
+from x
+;
+create table b as
+select *
+from x
+;
+create table c as
+select *
+from x
+;
+create table d as
+select *
+from x
+;
+create table e as
+select *
+from x
+;
+quit;
+%runn;
+
+
+
+
+data x;
+x=1;
+output;
+x=2;
+output;
+%runn;
+
+proc sql;
+create table a as 
+select *
+from x
+;
+create table b as
+select *
+from x
+;
+create table c as
+select *
+from x
+;
+create table d as
+select *
+from x
+;
+create table e as
+select *
+from x
+;
+quit;
+%runn;
+
+
+
+
+
+options IMPLMAC mprint;
+%macro run_2() / STMT;
+run;
+%if &SYSERR. %then %do; %abort cancel; %end; data _null_; run; %put **&SYSERR.**;
+%mend run_2;
+
+
+
+data x;
+x=1;
+output;
+x=2;
+output;
+run_2;
+
+
+options NOIMPLMAC nomprint;
+
+
+
+
+
+
+
+data a;
+b = 1;
+run;
+
+data a;
+text=17; *comment about 17;
+output;
+/*
+do not execute...
+napis=3*napis;
+*/
+
+%macro abc();
+x= 4+text;
+
+%* makcro comment - Dariusz Szpakowski ;
+%mend abc;
+
+%abc;
+
+run;
+
+
+data y;
+z = 1;
+run;
+
+
+
+
+
+data a;
+b = 1;
+run;
+
+
+%macro do_not_execute();
+data a;
+text=17; *comment about 17;
+output;
+/*
+do not execute...
+napis=3*napis;
+*/
+
+%macro abc();
+x= 4+text;
+
+%* makcro comment - Dariusz Szpakowski ;
+%mend abc;
+
+%abc;
+
+run;
+%mend do_not_execute;
+%macro do_not_execute();
+%put NOTE:[!] "Never_execute"!!;
+%mend do_not_execute;
+
+
+data y;
+z = 1;
+run;
+
+%do_not_execute();
+
+
+
+
+
+
+%put NOTE-[-] My OS is &SYSSCP., and my operating system is: &SYSSCPL.;
+
+
+%put NOTE-[-] Processing type: &SYSPROCESSNAME;
+
+
+
+%put NOTE-[-] Processing mode: &SYSPROCESSMODE;
+
+/*
+SAS DMS Session
+SAS Batch Mode
+SAS Line Mode
+SAS/CONNECT Session 
+SAS Share Server
+SAS IntrNet Server
+SAS Workspace Server
+SAS Pooled Workspace Server
+SAS Stored Process Server
+SAS OLAP Server
+SAS Table Server
+SAS Metadata Server
+*/
+
+
+
+
+
+%put NOTE-[-] CPU: &SYSNCPU;
+
+
+
+
+
+libname LIBRARYY "C:\NO\SUCH\DIR";
+%put *&SYSLIBRC.*;
+
+libname LIBRARYY "%sysfunc(getoption(work))";
+%put *&SYSLIBRC.*;
+
+
+
+
+data LIBRARYY.DLUGA_32ZNAKOWA_NAZWA_ZBOIRU_SAS;
+a=0;
+run;
+%put NOTE-[-] last created dataset name continous: ;
+%put NOTE-[-] *+--------1+--------2+--------3+--------4*;
+%put NOTE-[-] *&SYSDSN*;
+%put NOTE-[-] last created dataset name dot-notation;
+%put NOTE-[-] *&SYSLAST*;
+
+
+
+data _null_;
+a=0;
+run;
+%put NOTE-[-] *+--------1+--------2+--------3+--------4*;
+%put NOTE-[-] *&SYSDSN*;
+%put NOTE-[-] *&SYSLAST*;
+
+
+
+
+
+
+
+proc sql;
+create table LIBRARYY.INNA_31ZNAKOWA_NAZWA_ZBOIRU_SAS as
+select * 
+from LIBRARYY.DLUGA_32ZNAKOWA_NAZWA_ZBOIRU_SAS
+;
+quit;
+%put NOTE-[-] *+--------1+--------2+--------3+--------4*;
+%put NOTE-[-] *&SYSDSN*;
+%put NOTE-[-] *&SYSLAST*;
+
+
+
+
+
+
+proc sql;
+create table INNA_NAZWA_ZBOIRU_SAS as
+select * 
+from LIBRARYY.DLUGA_32ZNAKOWA_NAZWA_ZBOIRU_SAS
+;
+quit;
+%put NOTE-[-] *+--------1+--------2+--------3+--------4*;
+%put NOTE-[-] *&SYSDSN*;
+%put NOTE-[-] *&SYSLAST*;
+
+
+
+
+options NOSOURCE;   
+options NONOTES;    
+options NOSOURCE2;  
+options ERRORS=3;   /*  _ERROR_=1 */
+
+
+
+
+
+data test;
+infile cards;
+input triplet 8.; /* <- no $ */
+cards;
+aaa
+bbb
+ccc
+ddd
+eee
+fff
+ggg
+hhh
+iii
+;
+run;
+
+
+options NOTES;
+
+proc sql;
+create table INNA_NAZWA_ZBOIRU_SAS as
+select * 
+from LIBRARYY.DLUGA_32ZNAKOWA_NAZWA_ZBOIRU_SAS
+;
+quit;
+%put NOTE-[-] *+--------1+--------2+--------3+--------4*;
+%put NOTE-[-] *&SYSDSN*;
+%put NOTE-[-] *&SYSLAST*;
+
+
+
+
+
+options SOURCE; 
+options NOTES; 
+options SOURCE2;
+options ERRORS=20;
+
+
+
+
+
+
+%put NOTE-[-] *&SYSINDEX*;
+
+%macro a1;
+%put NOTE-[-] A1 *&SYSINDEX*;
+%mend a1;
+%macro a2;
+%put NOTE-[-] A2 *&SYSINDEX*;
+%mend a2;
+%macro a3;
+%put NOTE-[-] A3 *&SYSINDEX*;
+3
+%mend a3;
+
+
+%a1
+
+%a2;
+
+%let trzy = %a3;
+
+
+
+
+
+data test1;
+do j = 1 to 13;
+ put j=; 
+ call execute('%a1');
+ rc1 = dosubl('%a2'); 
+ rc2 = resolve('%a3');
+ output;
+end;
+run;
+
+
+
+
+data test1;
+do j = 1 to 3;
+ put j=; 
+ rc1 = dosubl('%a1');
+ rc1 = dosubl('%a2'); 
+ rc1 = dosubl('%a3');
+ output;
+end;
+run;
+
+
+
+
+data test2;
+do j = 1 to 3;
+ put j=; 
+ call execute('%a1');
+ rc1 = dosubl('%a1;%a2;%let t=%a3; %put NOTE:[%a3] &t;');
+ rc2 = resolve('%a3');
+ output;
+end;
+run;
+
+
+
+
+
+
+
+filename PLIK "C:\NO\SUCH\FILE";
+%put *&SYSFILRC.*;
+
+filename PLIK "%sysfunc(GETOPTION(work))";
+%put *&SYSFILRC.*;
+
+
+
+
+
+data _null_;
+file plik("real_rext_file.txt");
+put "1" / "2" / "3" / "4";
+run;
+
+
+data _null_;
+file plik("real_rext_file2.txt");
+put "5" / "6" / "7" / "8";
+run;
+
+
+
+
+
+
+data _null_;
+file plik("real_rext_file3.txt");
+put "1" / "2" / "3" / "4";
+
+file plik("real_rext_file4.txt");
+put "5" / "6" / "7" / "8";
+run;
+
+
+
+
+data _null_;
+do i = 1 to 4;
+    if mod(i,2) = 1 then
+    do;
+        file plik("real_rext_file3.txt");
+        put "1" / "2" / "3" / "4";
+    end;
+    else
+    do;
+         file plik("real_rext_file4.txt");
+         put "5" / "6" / "7" / "8";
+    end;
+end;
+run;
+
+
+
+%put session encoding: &SYSENCODING;
+
+
+%put NOTE-[-] Day and date of session start: &sysday,  &sysdate9. and hour is &systime.; 
+
+
+
+
+
+
+
+
+
+
+
+data x;
+x=42;
+run;
+proc sql;
+select * from x;
+quit;
+
+
+proc reg data =sashelp.class;
+model weight = height;
+run;
+ods html;
+
+proc reg data =sashelp.class;
+model weight = height;
+run;
+
+ods html close;
+
+
+/* PROC PRINTTO */
+proc printto;
+run;
+
+
+
+
+proc printto 
+print = "C:\SAS_WORK\PRINTTO_OUTPUT.TXT"
+log = "C:\SAS_WORK\PRINTTO_LOG.TXT"
+NEW
+;
+run;
+
+
+
+%put **%superq(SYSPRINTTOLIST)**;
+%put **%superq(SYSPRINTTOLOG)**;
+
+
+data x;
+a=1; output;
+a=2; output;
+a=3; output;
+a=4; output;
+a=5; output;
+a=6; output;
+run;
+
+proc sql;
+select sum(a) as sum_a
+, avg(a) as avg_a
+from
+x
+;
+quit;
+
+
+
+proc printto print = print log = log;
+run;
+
+
+
+
+proc printto;
+run;
+
+
+
+
+
+
+data top_secret(pw=admin1);
+a=1; output;
+a=2; output;
+a=3; output;
+a=4; output;
+a=5; output;
+a=6; output;
+run;
+
+
+
+
+
+
+
+
+%macro secret(PPP);
+/*%put **&ppp.**;*/
+
+data open;
+set top_secret(pw = &ppp.);
+b=2**a;
+drop a;
+run;
+
+%mend secret;
+
+%secret(admin1)
+
+
+
+
+
+
+
+/* DUMMY */
+FILENAME void DUMMY; 
+proc printto log = void; 
+run;
+
+%secret(admin1)
+
+proc printto;
+run;
+
+data test1;
+x=1;
+run;
+
+
+
+data top_secret;
+set top_secret(pw = admin1);
+run;
+
+proc datasets lib=work;
+modify top_secret(pw = admin1/);
+run;
+quit;
+
+
+/***********************************************************/
+
+
+data subjects;
+infile cards;
+input subject_id W H;
+cards;
+123 76 172
+322 133 198
+142 121 165
+541 90 186
+654 56 170
+177 65 170
+623 73 180
+run;
+
+
+
+
+data codes;
+length id 8 in out code $ 200;
+id = 1;
+out = "data ";
+in = "; set ";
+code = "; where W > 120; bmi = W / ((H/100)**2); run;";
+output;
+
+id = 2;
+out = "proc sort out = ";
+in = "  data =";
+code = "; by H W; run;";
+output;
+
+id = 3;
+out = "proc sql; create table ";
+in = " as select subject_id from ";
+code = " having W < avg(W); quit;";
+output;
+
+run;
+
+
+
+options source;
+
+
+
+%macro programs(id, in, out);
+
+filename code TEMP;
+
+data _null_;
+ file code;
+ set codes;
+ where id = &id;
+  put out;
+  put "&out.";
+  put in;
+  put "&in.";
+  put code;
+run;
+
+
+%include code / source2;
+
+/*filename code;*/
+
+%mend programs;
+
+
+
+
+options mprint;
+%programs(1,subjects,d1)
+
+
+
+%programs(3,subjects,d3)
+
+
+
+
+data hospital;
+
+do subject_id = 1 to 10000;
+
+hospital_name = "some hospital name" !! put(subject_id, z5.);
+output;
+
+end;
+
+run;
+
+
+
+
+
+/*
+data hosp_name;
+set hospital;
+where subject_id in (
+123
+322
+142
+541
+654
+177
+623
+);
+run;
+*/
+
+
+filename code TEMP;
+
+data _null_;
+ file code;
+ set subjects END = END;
+ 
+if _N_ = 1 then
+do;
+
+put "
+data hosp_name;
+set hospital;
+where subject_id in (
+"
+;
+end;
+
+
+put subject_id;
+
+
+if END = 1 then
+do;
+put "
+);
+run;
+"
+;
+end;
+
+
+run;
+
+
+%include code / source2;
+
+/*filename code;*/
+
+
+
+
+data subjects;
+infile cards;
+input subject_id W H;
+cards;
+123 76 172
+322 133 198
+654 56 170
+177 65 170
+623 73 180
+999 66 173
+run;
+
+
+
+
+
+
+/* RESOLVE */
+data test;
+length x y 8 code $ 50;
+code = '(x > 1)';                  x= 3; y=11; output;
+code = '(x < 1 and (9 < y < 13))'; x=-3; y=11; output;
+code = '(x < 1)';                  x= 3; y=11; output;
+code = '(y < 1)';                  x= 3; y=-1; output;
+run;
+
+
+
+
+data test;
+length x y 8 code $ 50;
+code = '(&x > 1)';                   x= 3; y=11.0; output;
+code = '(&x < 1 and (9 < &y < 13))'; x=-3; y=11; output;
+code = '(&x < 1)';                   x= 3; y=11; output;
+code = '(&y < 1)';                   x= 3; y=-1; output;
+run;
+
+
+
+options symbolgen;
+data test2;
+set test;
+
+
+call symputx("X",put(X,best32.),"G");
+call symputx("Y",put(Y,best32.),"G");
+
+_rc_ = resolve('%put _user_;');
+
+length result $ 50;
+result = resolve('%sysevalf(' || code ||')');
+
+if input(resolve('%sysevalf(' || code ||')'), best32.)
+then check=1;
+else check=0;
+
+a = symget("X");
+b = symget("Y");
+put _ALL_;
+run;
+
+
+
+
+
+data testa;
+length x y 8 code $ 50;
+code = '(x > 1)';                        x= 3; y=11; output;
+code = '(x < 1 and (9 < y < 13))';       x=-3; y=11; output;
+code = '(x < 1)';                        x= 3; y=11; output;
+code = '(y < 1)';                        x= 3; y=-1; output;
+run;
+
+
+data testa2;
+set testa;
+
+length codeeval $ 2000;
+
+array VARSn _NUMERIC_;
+
+
+codeeval = code;
+do over VARSn;
+ codeeval = TRANWRD(codeeval, vname(VARSn), strip(put(VARSn,best32.)));
+end;
+
+if input(resolve('%sysevalf(' || strip(codeeval) ||',BOOLEAN)'), best32.)
+then sprawdzenie1=1;
+else sprawdzenie1=0;
+run;
+
+
+
+
+
+
+
+
+data testb;
+length x y 8 code $ 50;
+code = '(x > 1)';                  x= 3; y=11; output;
+code = '(x < 1 and (9 < y < 13))'; x=-3; y=11; output;
+code = '(x < 1)';                  x= 3; y=11; output;
+code = '(y < 1)';                  x= 3; y=-1; output;
+run; 
+
+proc sql;
+create table kody_b as select distinct QUOTE(strip(code)) as q from testb;
+quit;
+
+
+
+
+
+filename testb2 TEMP lrecl=2000;
+
+data _null_;
+file testb2;
+set kody_b end=EOF;
+length _X_ $ 2000;
+
+if _N_ = 1 then
+do;
+ put "data testb2;";
+ put "set testb;";
+ put "select;";
+end;
+
+_X_ = "when (code = " || strip(q) || ") do; if (" || dequote(q) || ") then sprawdzenie1=1; else sprawdzenie1=0; end;";
+put _X_;
+
+
+if EOF = 1 then
+do;
+ put "otherwise;";
+ put "end;";
+ put "run;";
+end;
+
+run;
+
+
+%include testb2 / SOURCE2;
+
+filename testb2;
+
+
+
+
+
+
+data testc;
+length x y 8 c $ 10 kod $ 50;
+kod = '(x > 1) and c=''A''';            x= 3; y=11; c="A"; output;
+kod = '(x < 1 and (9 < y < 13))';       x=-3; y=11; c="B"; output;
+kod = '(x < 1) or C in ("C","D","E")';  x= 3; y=11; c="C"; output;
+kod = '(y < 1)';                        x= 3; y=11; c="D"; output;
+run;
+
+
+proc sql;
+create table kody_c as select distinct QUOTE(strip(kod)) as q from testc;
+quit;
+
+
+
+
+filename testc2 TEMP lrecl=2000;
+
+data _null_;
+file testc2;
+set kody_c end=EOF;
+length _X_ $ 2000;
+
+if _N_ = 1 then
+do;
+ put "proc sql;";
+ put "create table testc2 as";
+ put "select * ";
+ put "from testc";
+ put "where case";
+
+end;
+
+_X_ = "when (kod = " || strip(q) || ") and (" || dequote(q) || ") then 1";
+put _X_;
+
+
+if EOF = 1 then
+do;
+ put "else 0 end = 1";
+ put ";";
+ put "quit;";
+end;
+
+run;
+
+
+%include testc2 / SOURCE2;
+
+filename testc2 clear;
